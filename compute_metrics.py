@@ -216,27 +216,102 @@ def compute_capture():
 
 # ── CompreCap ────────────────────────────────────────────────────────
 
-def compute_comprescore():
-    """CompreCap metric from arXiv:2412.08614."""
-    # CompreCap requires ground-truth scene graph annotations.
-    # Only applicable for COCO subset (natural category) if annotations available.
-    # Placeholder — the user can integrate their CompreCap implementation here.
-    print("CompreCap: requires GT scene graph annotations, skipping for now")
-    # TODO: integrate CompreCap for images with available SG annotations
-    pass
+def compute_comprescore(comprecap_root=None, dataset_root=None,
+                        llama_path=None, bert_path=None):
+    """CompreCap: directed scene graph metric (CVPR 2025).
+
+    Only works for images in the CompreCap dataset (560 MSCOCO panoptic images).
+    For images NOT in the dataset, skips silently.
+
+    Requires:
+      - CompreCap repo: https://github.com/LuFan31/CompreCap
+      - CompreCap dataset from HuggingFace (with anno.json)
+      - Llama-3-8B-Instruct weights
+      - Sentence-BERT model
+    """
+    from metrics.comprescore_wrapper import CompreCapScorer
+
+    # Default paths on datalab server
+    if comprecap_root is None:
+        comprecap_root = os.environ.get("COMPRECAP_ROOT", "./CompreCap")
+    if dataset_root is None:
+        dataset_root = os.environ.get("COMPRECAP_DATASET", "./CompreCap_dataset")
+    if llama_path is None:
+        llama_path = os.environ.get("LLAMA3_PATH", "/mnt/shared_resources/models/Llama-3-8B-Instruct")
+    if bert_path is None:
+        bert_path = os.environ.get("SBERT_PATH", "sentence-transformers/all-MiniLM-L6-v2")
+
+    try:
+        scorer = CompreCapScorer(
+            comprecap_root=comprecap_root,
+            dataset_root=dataset_root,
+            llama_path=llama_path,
+            bert_path=bert_path,
+        )
+    except FileNotFoundError as e:
+        print(f"CompreCap not available: {e}")
+        return
+
+    scores = {}
+    skipped = 0
+    for model_name in ["internvl2-8b", "gpt4o"]:
+        for image_id, cell_id, caption in load_captions(model_name):
+            # CompreCap uses MSCOCO image names (e.g., "000000000285.jpg")
+            # Map our image_id back to the original MSCOCO name if possible
+            result = scorer.score(image_id, caption)
+            if result is None:
+                skipped += 1
+                continue
+            key = f"{image_id}_{model_name}_{cell_id}"
+            scores[key] = result["unified_score"]
+
+    save_scores("comprescore", scores)
+    print(f"CompreCap: {len(scores)} entries ({skipped} skipped — not in CompreCap dataset)")
 
 
 # ── CapsBench ────────────────────────────────────────────────────────
 
-def compute_capsbench():
-    """CapsBench: VQA-based caption evaluation.
-    Uses the user's existing CapsBench implementation."""
-    # The user has CapsBench at /mnt/lixiaofeng/capsbench on datalab.
-    # This function calls their existing CapsBench code.
-    # Placeholder — user integrates their implementation.
-    print("CapsBench: user has existing implementation, integrate via --capsbench-path")
-    # TODO: import the user's CapsBench module and run evaluation
-    pass
+def compute_capsbench(capsbench_root=None, questions_jsonl=None):
+    """CapsBench: VQA-based caption evaluation (Playground v3).
+
+    Uses the user's existing CapsBench implementation at /mnt/lixiaofeng/capsbench.
+    CapsBench works in two modes:
+      1. If questions_jsonl provided: uses pre-generated question bank (fast)
+      2. Otherwise: generates reference captions + questions per image (expensive, API calls)
+
+    Args:
+        capsbench_root: path to CapsBench repo
+        questions_jsonl: path to pre-generated questions JSONL (optional)
+    """
+    from metrics.capsbench_wrapper import CapsBenchScorer
+
+    if capsbench_root is None:
+        capsbench_root = os.environ.get("CAPSBENCH_ROOT", "/mnt/lixiaofeng/capsbench")
+
+    scorer = CapsBenchScorer(
+        capsbench_root=capsbench_root,
+        questions_jsonl=questions_jsonl,
+    )
+
+    scores = {}
+    for model_name in ["internvl2-8b", "gpt4o"]:
+        for image_id, cell_id, caption in load_captions(model_name):
+            img_path = find_image_path(image_id)
+            if not img_path:
+                continue
+
+            # Generate question bank on first encounter (cached)
+            try:
+                scorer.ensure_questions(img_path, image_id)
+                score = scorer.score(img_path, caption, image_id)
+                key = f"{image_id}_{model_name}_{cell_id}"
+                scores[key] = float(score)
+            except Exception as e:
+                print(f"CapsBench error {image_id}/{cell_id}: {e}")
+                continue
+
+    save_scores("capsbench", scores)
+    print(f"CapsBench: {len(scores)} entries")
 
 
 # ── LLaVA-Critic ─────────────────────────────────────────────────────
