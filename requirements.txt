@@ -1,0 +1,10 @@
+torch>=2.0
+transformers>=4.40
+Pillow
+numpy
+scipy
+nltk
+openai
+tqdm
+matplotlib
+pandas
