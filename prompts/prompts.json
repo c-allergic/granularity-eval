@@ -2,46 +2,46 @@
   "G1-A": {
     "granularity": "coarse",
     "type": "accurate",
-    "prompt": "Describe this image in ONE sentence (10-20 words). Only mention the most important subject and action. Do NOT add extra details. Be completely accurate and truthful."
+    "prompt": "Describe this image in ONE sentence (10-20 words). Only mention the most important subject and action. Do NOT add extra details. Be completely accurate and truthful. Respond in English only."
   },
   "G1-I": {
     "granularity": "coarse",
     "type": "incomplete",
-    "prompt": "Describe this image in ONE sentence (10-20 words). Be VAGUE and incomplete. Use generic terms like 'something', 'somewhere', 'a person' instead of specific descriptions. Miss the main subject if possible."
+    "prompt": "Describe this image in ONE sentence (10-20 words). Be VAGUE and incomplete. Use generic terms like 'something', 'somewhere', 'a person' instead of specific descriptions. Miss the main subject if possible. Respond in English only."
   },
   "G1-X": {
     "granularity": "coarse",
     "type": "inaccurate",
-    "prompt": "Describe this image in ONE sentence (10-20 words). Include 1-2 SUBTLE factual errors — wrong color, wrong object, or wrong action. Make it sound completely natural and confident."
+    "prompt": "Describe this image in ONE sentence (10-20 words). Include 1-2 SUBTLE factual errors — wrong color, wrong object, or wrong action. Make it sound completely natural and confident. Respond in English only."
   },
   "G2-A": {
     "granularity": "medium",
     "type": "accurate",
-    "prompt": "Describe this image in about 3 sentences (40-60 words). Mention the main subjects, their key attributes, and the overall scene. Be completely accurate and truthful."
+    "prompt": "Describe this image in about 3 sentences (40-60 words). Mention the main subjects, their key attributes, and the overall scene. Be completely accurate and truthful. Respond in English only."
   },
   "G2-I": {
     "granularity": "medium",
     "type": "incomplete",
-    "prompt": "Describe this image in about 3 sentences (40-60 words). Be VAGUE about secondary details. Use generic terms for some attributes or objects. Skip some secondary elements entirely."
+    "prompt": "Describe this image in about 3 sentences (40-60 words). Be VAGUE about secondary details. Use generic terms for some attributes or objects. Skip some secondary elements entirely. Respond in English only."
   },
   "G2-X": {
     "granularity": "medium",
     "type": "inaccurate",
-    "prompt": "Describe this image in about 3 sentences (40-60 words). Include 2-3 SUBTLE hallucinated details — wrong objects, wrong spatial relations, or wrong attributes. Make them blend in naturally."
+    "prompt": "Describe this image in about 3 sentences (40-60 words). Include 2-3 SUBTLE hallucinated details — wrong objects, wrong spatial relations, or wrong attributes. Make them blend in naturally. Respond in English only."
   },
   "G3-A": {
     "granularity": "detailed",
     "type": "accurate",
-    "prompt": "Describe this image in DETAIL (6+ sentences, 100-150 words). Mention all main objects, their attributes (color, shape, size, texture), spatial relations, actions, and the overall scene. Be completely accurate and thorough."
+    "prompt": "Describe this image in DETAIL (6+ sentences, 100-150 words). Mention all main objects, their attributes (color, shape, size, texture), spatial relations, actions, and the overall scene. Be completely accurate and thorough. Respond in English only."
   },
   "G3-I": {
     "granularity": "detailed",
     "type": "incomplete",
-    "prompt": "Describe this image in detail (6+ sentences, 100-150 words). Write a LOT of text but keep the information density LOW. Use filler words, repetition, and vague/generic terms for many details. The description should FEEL detailed but actually miss many specifics."
+    "prompt": "Describe this image in detail (6+ sentences, 100-150 words). Write a LOT of text but keep the information density LOW. Use filler words, repetition, and vague/generic terms for many details. The description should FEEL detailed but actually miss many specifics. Respond in English only."
   },
   "G3-X": {
     "granularity": "detailed",
     "type": "inaccurate",
-    "prompt": "Describe this image in detail (6+ sentences, 100-150 words). Include 4-6 HALLUCINATED details — extra objects not in the image, wrong colors, wrong spatial descriptions, invented background elements, etc. Distribute errors evenly throughout. Make them sound completely natural."
+    "prompt": "Describe this image in detail (6+ sentences, 100-150 words). Include 4-6 HALLUCINATED details — extra objects not in the image, wrong colors, wrong spatial descriptions, invented background elements, etc. Distribute errors evenly throughout. Make them sound completely natural. Respond in English only."
   }
 }
