@@ -13,10 +13,10 @@ body {
 }
 
 .container {
-    max-width: 680px;
+    max-width: 900px;
     margin: 0 auto;
     background: #fafaf8;
-    padding: 60px 70px;
+    padding: 60px 80px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
@@ -121,7 +121,7 @@ footer {
     color: #666;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 960px) {
     body {
         padding: 30px 15px;
     }
