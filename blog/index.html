@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像描述评估方法综述</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <article class="container">
+        <header>
+            <h1>图像描述评估方法综述</h1>
+            <p class="subtitle">范式、挑战与未来方向</p>
+            <p class="meta">2026年6月</p>
+        </header>
+
+        <section id="intro">
+            <p>随着视觉-语言模型的快速发展，图像描述生成（Image Captioning）任务已经从简单的物体识别演进到对场景的深入理解和详细描述。然而，如何评估一个图像描述的质量仍然是一个充满挑战的问题。传统的基于n-gram匹配的指标（如BLEU、METEOR）在捕捉语义相似度和事实准确性方面存在明显局限，而新兴的评估范式各有优势但也存在潜在偏差。</p>
+            <p>本文总结了近期图像描述评估领域的代表性工作，分析不同评估范式的优劣，并提出我们正在探索的一个关键问题：基于匹配的评估指标是否存在粒度偏差（Granularity Bias）——即对短而准确的描述施加不公平的惩罚。</p>
+        </section>
+
+        <section id="paradigms">
+            <h2>评估范式</h2>
+
+            <h3>VQA-based 评估</h3>
+            <p>CapsBench [<a href="https://arxiv.org/abs/2405.19092">Madhyastha et al., 2024</a>] 将评估任务转化为一系列视觉问答问题。对于一张图像，生成多个关于图像内容的问题，然后用VQA模型回答这些问题，比较候选描述与参考描述在回答准确率上的差异。这种方法可以针对特定的视觉概念（物体、属性、关系）进行细粒度评估，且每个问题对应一个具体的语义维度，可解释性强。</p>
+            <p>然而，这种方法依赖VQA模型质量，评估结果受VQA模型偏差影响。问题生成质量也至关重要——生成的问题可能无法覆盖所有重要信息。此外，对每个候选描述运行多次VQA推理导致计算开销较大。</p>
+
+            <h3>Matching-based 评估</h3>
+            <p>CAPTURE [<a href="https://arxiv.org/abs/2412.08614">Li et al., 2024</a>] 和 CompreScore [<a href="https://arxiv.org/abs/2503.12329v1">Zhang et al., 2025</a>] 将图像描述和参考描述解析为结构化表示（如场景图），然后计算两者之间的F1匹配分数。CAPTURE关注属性和目标的精确匹配，CompreScore则构建更完整的场景图并计算节点和边的匹配度。</p>
+            <p>这类方法的优势在于结构化评估——能够区分物体、属性和关系的匹配情况，F1分数可以拆分为precision和recall，分别分析信息完整性和准确性。在许多基准测试中，这些指标与人类评分有较高相关性。</p>
+            <p>但我们观察到一个潜在问题：F1分数的recall部分天然奖励更详细的描述（即使包含错误）。一个简短但完全准确的描述（如"一只猫坐在沙发上"）会因为信息量不足而获得较低的recall分数，即使它没有任何错误。相反，一个冗长的描述即使包含多个幻觉，仍可能因为整体信息量大而获得较高的F1分数。</p>
+
+            <h3>VLM-as-a-Judge 评估</h3>
+            <p>CAPArena [<a href="https://arxiv.org/abs/2409.10695">Chen et al., 2024</a>] 直接使用强大的视觉-语言模型（如GPT-4V、Claude 3.5 Sonnet）作为评估器。给定图像和候选描述，模型输出一个评分或排序。这种方法灵活性高，可以根据不同的评估维度调整提示，且VLM能够捕捉复杂的语义关系和上下文信息，无需人工标注的参考描述。</p>
+            <p>然而，黑盒特性使其难以解释模型为什么给出某个分数。VLM本身的训练数据和偏好会影响评估结果，大规模评估时的API调用成本昂贵，且同一描述在不同时间或不同提示下可能得到不同的评分，稳定性存在问题。</p>
+        </section>
+
+        <section id="analysis">
+            <h2>范式对比</h2>
+
+            <p>这三种范式并非互相替代的关系，而是在不同维度上各有侧重。VQA-based和VLM Judge更容易评估准确性（是否符合图像内容），而Matching-based更强调完整性（是否覆盖足够多的信息）。在自动化程度上，Matching-based需要参考描述，VQA-based需要问题生成，而VLM Judge可以完全无参考地工作。在评估粒度上，VQA-based可以针对特定概念评估，Matching-based聚焦于结构化元素，VLM Judge提供整体评分。</p>
+
+            <p>不同范式的关键特征对比：</p>
+            <ul>
+                <li><strong>VQA-based：</strong>细粒度、可解释、需要VQA模型、中等计算成本</li>
+                <li><strong>Matching-based：</strong>结构化、可拆解、需要参考描述、存在潜在粒度偏差</li>
+                <li><strong>VLM Judge：</strong>灵活、语义理解强、无需参考、黑盒且成本高</li>
+            </ul>
+
+            <p>理想的评估体系应该组合多种范式，根据具体应用场景选择合适的指标组合。例如，在benchmark排名时可以使用Matching-based获得稳定的量化分数，在模型调试时使用VQA-based定位具体问题，在快速迭代时使用VLM Judge进行探索性评估。</p>
+        </section>
+
+        <section id="granularity-bias">
+            <h2>粒度偏差问题</h2>
+
+            <p>我们假设基于F1匹配的评估指标存在系统性的粒度偏差。具体而言，给定两个描述：一个短而准确（如"一只猫坐在沙发上"），一个长但不准确（如"一只棕色的猫坐在绿色的沙发上，旁边有一本书和一个花瓶，背景是蓝色的墙壁"——其中多个细节是幻觉）。人类评估者会倾向于认为短而准确的描述更好（零错误优于多个错误），但F1-based指标可能会给长描述更高的分数，因为它包含更多可匹配的元素。</p>
+
+            <h3>实验设计</h3>
+            <p>为了系统地验证这一假设，我们设计了一个3×3控制实验矩阵，交叉组合三个粒度等级（G1: 粗粒度10-20词，G2: 中粒度40-60词，G3: 细粒度100-150词）和三种准确性类型（A: 准确，I: 不完整/模糊，X: 不准确/包含幻觉）。</p>
+
+            <p>我们定义了两个关键的对比测试：</p>
+            <ul>
+                <li><strong>P1: 短而准确 vs 长而不准确</strong> — 对比G1-A（10-20词，完全准确）与G3-X（100-150词，包含4-6个幻觉）。人类偏好：G1-A > G3-X。如果评估指标存在粒度偏差，会倾向于给G3-X更高分数。</li>
+                <li><strong>P2: 相同粒度下的准确性排序</strong> — 在每个粒度内，对比A（准确）vs I（不完整）vs X（不准确）。人类偏好：A > I > X。好的评估指标应该在每个粒度内都能正确排序。</li>
+            </ul>
+
+            <h3>初步实验</h3>
+            <p>我们使用Qwen2.5-VL-7B模型在20张自然图像上生成了9种类型的描述（3×3矩阵），并用CLIPScore进行了初步评估。结果显示：</p>
+            <ul>
+                <li>CLIPScore对粒度不敏感：G1-A、G2-A、G3-A的平均分数几乎相同（0.26-0.27），说明基于CLIP嵌入的评估不会对长度施加系统性偏差</li>
+                <li>准确性辨别能力弱：在P1对比中（G1-A vs G3-X），CLIPScore几乎无法区分（45% vs 55%，接近随机）</li>
+            </ul>
+
+            <p>下一步需要用CAPTURE、CompreScore等基于F1匹配的指标重新评估，验证粒度偏差假设，并收集人类标注进行meta-evaluation。</p>
+        </section>
+
+        <section id="conclusion">
+            <h2>总结</h2>
+            <p>图像描述评估是一个多维度、多目标的问题，不存在完美的单一评估指标。VQA-based适合需要细粒度、可解释评估的场景；Matching-based适合结构化分析和benchmark排名，但需警惕粒度偏差；VLM Judge适合快速迭代和探索性评估，但需注意成本和稳定性。</p>
+            <p>我们的粒度偏差实验旨在揭示一个重要但常被忽视的问题：评估指标是否会错误地奖励冗长但不准确的描述？这对于构建更加鲁棒、公平的评估体系至关重要。未来的工作将包括在更大规模数据集上验证假设、收集人类标注进行meta-evaluation、探索设计"粒度无偏"的评估指标、以及研究不同模型在生成不同粒度描述时的特性。</p>
+        </section>
+
+        <footer>
+            <p><a href="https://github.com/yourusername/granularity-eval">项目代码和数据</a></p>
+        </footer>
+    </article>
+</body>
+</html>
