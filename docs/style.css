@@ -98,6 +98,29 @@ footer {
     font-size: 0.9em;
 }
 
+.references {
+    list-style: none;
+    counter-reset: ref-counter;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.references li {
+    counter-increment: ref-counter;
+    margin-bottom: 14px;
+    padding-left: 2em;
+    position: relative;
+    line-height: 1.6;
+}
+
+.references li::before {
+    content: "[" counter(ref-counter) "]";
+    position: absolute;
+    left: 0;
+    font-weight: 600;
+    color: #666;
+}
+
 @media (max-width: 768px) {
     body {
         padding: 30px 15px;
