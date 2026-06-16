@@ -23,17 +23,17 @@
             <h2>一、评估范式</h2>
 
             <h3>VQA-based 评估</h3>
-            <p>VQA-based方法将评估任务转化为一系列视觉问答问题。CapsBench [1] 通过生成多个关于图像内容的问题，用VQA模型回答这些问题，比较候选描述与参考描述在回答准确率上的差异。类似的工作还包括CHAIR [2]（检测object hallucination）、POPE [3]（通过yes/no问题评估幻觉）等。这种方法可以针对特定的视觉概念（物体、属性、关系）进行细粒度评估，且每个问题对应一个具体的语义维度，可解释性强。</p>
+            <p>VQA-based方法将评估任务转化为一系列视觉问答问题。CapsBench [1] 通过生成多个关于图像内容的问题，用VQA模型回答这些问题，比较候选描述在回答准确率上的差异。这类方法的早期工作包括CHAIR [2]（通过检测描述中是否存在图像中不存在的物体来评估object hallucination）、POPE [3]（通过yes/no问题轮询式评估幻觉）等。这种方法可以针对特定的视觉概念（物体、属性、关系）进行细粒度评估，且每个问题对应一个具体的语义维度，可解释性强。</p>
             <p>然而，这种方法依赖VQA模型质量，评估结果受VQA模型偏差影响。问题生成质量也至关重要——生成的问题可能无法覆盖所有重要信息。此外，对每个候选描述运行多次VQA推理导致计算开销较大。</p>
 
             <h3>Matching-based 评估</h3>
-            <p>CAPTURE [4] 和 CompreScore [5] 将图像描述和参考描述解析为结构化表示（如场景图），然后计算两者之间的F1匹配分数。CAPTURE关注属性和目标的精确匹配，CompreScore则构建更完整的场景图并计算节点和边的匹配度。</p>
+            <p>CAPTURE [4] 和 CompreCap [5] 将图像描述解析为结构化表示，然后计算与参考描述之间的匹配分数。CAPTURE从描述中提取视觉元素（物体、属性、关系），通过三阶段匹配获得最终的评估分数，实现了与专家判断的高度一致性。CompreCap则构建有向场景图（directed scene graph），通过语义分割和关系标注来编码丰富的组合信息，在节点和边两个层面计算匹配度。</p>
             <p>这类方法的优势在于结构化评估——能够区分物体、属性和关系的匹配情况，F1分数可以拆分为precision和recall，分别分析信息完整性和准确性。在许多基准测试中，这些指标与人类评分有较高相关性。</p>
             <p>但我们观察到一个潜在问题：F1分数的recall部分天然奖励更详细的描述（即使包含错误）。一个简短但完全准确的描述（如"一只猫坐在沙发上"）会因为信息量不足而获得较低的recall分数，即使它没有任何错误。相反，一个冗长的描述即使包含多个幻觉，仍可能因为整体信息量大而获得较高的F1分数。</p>
 
             <h3>VLM-as-a-Judge 评估</h3>
             <p>近年来，直接使用强大的视觉-语言模型（如GPT-4V、Claude 3.5 Sonnet）作为评估器的方法受到关注。这种方法灵活性高，可以根据不同的评估维度调整提示，且VLM能够捕捉复杂的语义关系和上下文信息，无需人工标注的参考描述。</p>
-            <p>CAPArena [6] 是一项meta-evaluation工作，通过收集6000多个人类偏好标注样本，系统地评估了不同caption evaluation指标与人类判断的对齐程度。研究发现，VLM-as-a-Judge方法（如GPT-4V评分）相比传统指标（BLEU、CIDEr等）与人类偏好的一致性显著更高，这为使用VLM进行caption评估提供了实证支持。</p>
+            <p>CapArena [6] 是一项关键的meta-evaluation工作，通过收集超过6000个人类偏好标注样本构建了arena-style评估平台，系统地评估了不同caption evaluation指标与人类判断的对齐程度。其核心发现是：VLM-as-a-Judge方法（如GPT-4V评分）相比传统指标（BLEU、CIDEr等）与人类偏好的一致性显著更高，为使用VLM进行caption评估提供了实证支持。此外，该工作还发现GPT-4o等领先模型在caption质量上已达到甚至超过人类水平。</p>
             <p>然而，黑盒特性使其难以解释模型为什么给出某个分数。VLM本身的训练数据和偏好会影响评估结果，大规模评估时的API调用成本昂贵，且同一描述在不同时间或不同提示下可能得到不同的评分，稳定性存在问题。</p>
         </section>
 
@@ -73,7 +73,7 @@
                 <li>准确性辨别能力弱：在P1对比中（G1-A vs G3-X），CLIPScore几乎无法区分（45% vs 55%，接近随机）</li>
             </ul>
 
-            <p>下一步需要用CAPTURE、CompreScore等基于F1匹配的指标重新评估，验证粒度偏差假设，并收集人类标注进行meta-evaluation。</p>
+            <p>下一步需要用CAPTURE、CompreCap等基于F1匹配的指标重新评估，验证粒度偏差假设，并收集人类标注进行meta-evaluation。</p>
         </section>
 
         <section id="conclusion">
@@ -85,12 +85,12 @@
         <section id="references">
             <h2>参考文献</h2>
             <ol class="references">
-                <li>M. Madhyastha, J. Wang, and L. Specia, "CapsBench: A benchmark to assess LLM capabilities in image captioning," <i>arXiv preprint arXiv:2405.19092</i>, 2024.</li>
+                <li>B. Liu, E. Akhgari, A. Visheratin, A. Kamko, L. Xu, S. Shrirao, C. Lambert, J. Souza, S. Doshi, and D. Li, "Playground v3: Improving text-to-image alignment with deep-fusion large language models," <i>arXiv preprint arXiv:2409.10695</i>, 2024.</li>
                 <li>A. Rohrbach, L. A. Hendricks, K. Burns, T. Darrell, and K. Saenko, "Object hallucination in image captioning," in <i>Proc. EMNLP</i>, 2018, pp. 4035-4045.</li>
                 <li>Y. Li, Y. Du, K. Zhou, J. Wang, W. X. Zhao, and J.-R. Wen, "Evaluating object hallucination in large vision-language models," in <i>Proc. EMNLP</i>, 2023, pp. 292-305.</li>
-                <li>Y. Li, X. Zhang, and M. Chen, "CAPTURE: Comprehensive evaluation for image captioning," <i>arXiv preprint arXiv:2412.08614</i>, 2024.</li>
-                <li>H. Zhang, K. Liu, and Y. Wang, "CompreScore: A comprehensive metric for image captioning evaluation," <i>arXiv preprint arXiv:2503.12329</i>, 2025.</li>
-                <li>J. Chen, S. Park, and A. Gupta, "CAPArena: Benchmarking image captioning evaluation metrics with human preferences," <i>arXiv preprint arXiv:2409.10695</i>, 2024.</li>
+                <li>H. Dong, J. Li, B. Wu, J. Wang, Y. Zhang, and H. Guo, "Benchmarking and improving detail image caption," <i>arXiv preprint arXiv:2405.19092</i>, 2024.</li>
+                <li>F. Lu, W. Wu, K. Zheng, S. Ma, B. Gong, J. Liu, W. Zhai, Y. Cao, Y. Shen, and Z.-J. Zha, "Benchmarking large vision-language models via directed scene graph for comprehensive image captioning," <i>arXiv preprint arXiv:2412.08614</i>, 2024.</li>
+                <li>K. Cheng, W. Song, J. Fan, Z. Ma, Q. Sun, F. Xu, C. Yan, N. Chen, J. Zhang, and J. Chen, "CapArena: Benchmarking and analyzing detailed image captioning in the LLM era," <i>arXiv preprint arXiv:2503.12329</i>, 2025.</li>
             </ol>
         </section>
 
